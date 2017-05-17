@@ -31,7 +31,7 @@ describe('Microcosm::push', function() {
     expect(repo).toHaveState('count', 4)
   })
 
-  it('does not change if no action responds', () => {
+  it('does not change if no domain responds', () => {
     const repo = new Microcosm()
     const spy = jest.fn()
 
@@ -72,7 +72,6 @@ describe('Microcosm::push', function() {
       expect(parent.state.color).toEqual('red')
       expect(parent.state.shape).toEqual(undefined)
       expect(child.state.color).toEqual('red')
-
       expect(child.state.shape).toEqual('triangle')
 
       child.push(setShape, 'square')
