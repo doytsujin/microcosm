@@ -133,8 +133,9 @@ class Presenter extends React.PureComponent {
    * Presenter forking behavior:
    * @param {Microcosm} repo
    * @param {Object} props
+   * @param {Object} state
    */
-  getRepo(repo, props) {
+  getRepo(repo, props, state) {
     return repo ? repo.fork() : new Microcosm()
   }
 

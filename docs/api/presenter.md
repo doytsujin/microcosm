@@ -345,7 +345,7 @@ class HelloWorldPresenter extends Presenter {
 }
 ```
 
-### `getRepo(repo, props)`
+### `getRepo(repo, props, state)`
 
 Runs before assigning a repo to a Presenter. This method is given the
 parent repo, either passed in via `props` or `context`. By default, it
@@ -364,6 +364,21 @@ class NoFork extends Presenter {
 }
 ```
 
+The props and the state of the Presenter are also passed in. For example, you may want to inject a prop value into the Presenter's  isolated repo:
+```javascript
+import Repo from './repo'
+
+class HasCustomRepo extends Presenter {
+  getRepo (repo, props) {
+    if (props.isolated) {
+      // Create a new isolated repo instead of
+      // using the one passed down
+      repo = new Repo()
+    }
+    return repo
+  }
+}
+```
 ### `send(action, ...params)`
 
 Bubble an action up through the presenter tree. If no parent presenter
