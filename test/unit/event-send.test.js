@@ -1,5 +1,4 @@
 import React from 'react'
-import Microcosm from '../../src/microcosm'
 import Presenter from '../../src/addons/presenter'
 import send from '../../src/event-send'
 import { mount } from 'enzyme'
@@ -21,14 +20,10 @@ describe('send', function() {
     )
 
     class Parent extends Presenter {
-      setup(repo) {
-        repo.addDomain('spy', {
-          register() {
-            return {
-              [action]: spy
-            }
-          }
-        })
+      intercept() {
+        return {
+          [action]: spy
+        }
       }
 
       render() {
@@ -55,14 +50,10 @@ describe('send', function() {
     }
 
     class Parent extends Presenter {
-      setup(repo) {
-        repo.addDomain('spy', {
-          register() {
-            return {
-              [action]: spy
-            }
-          }
-        })
+      intercept() {
+        return {
+          [action]: spy
+        }
       }
 
       render() {
