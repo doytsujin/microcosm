@@ -9,6 +9,7 @@
  */
 
 import React from 'react'
+import ReactDOM from 'react-dom'
 import Microcosm, { get, merge, tag, getRegistration } from '../microcosm'
 import Model from './model'
 
@@ -211,6 +212,17 @@ class PresenterMediator extends React.PureComponent {
 
   componentDidMount() {
     this.presenter.refs = this.refs
+
+    let handleEvent = e => {
+      e.stopPropagation()
+      let action = e.detail.action
+      let payload = e.detail.payload
+
+      this.repo.push(action, ...payload)
+    }
+
+    let element = ReactDOM.findDOMNode(this)
+    element && element.addEventListener('event-send', handleEvent)
   }
 
   componentWillUnmount() {

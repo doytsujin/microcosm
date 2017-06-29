@@ -12,6 +12,7 @@ import CompareTree from './compare-tree'
 import coroutine from './coroutine'
 import getRegistration from './get-registration'
 import tag from './tag'
+import send from './event-send'
 import { RESET, PATCH, ADD_DOMAIN } from './lifecycle'
 import { merge, get, set, update, isString } from './utils'
 
@@ -439,5 +440,6 @@ export {
   set,
   update,
   merge,
+  send,
   getRegistration
 }
