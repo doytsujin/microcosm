@@ -218,7 +218,7 @@ class PresenterMediator extends React.PureComponent {
       let action = e.detail.action
       let payload = e.detail.payload
 
-      this.repo.push(action, ...payload)
+      this.send(action, ...payload)
     }
 
     let element = ReactDOM.findDOMNode(this)
