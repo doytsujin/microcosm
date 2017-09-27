@@ -12,13 +12,32 @@ module.exports = function() {
     {
       context: __dirname,
       entry: {
+        lib: '../src/index'
+      },
+      devtool: 'sourcemap',
+      externals: {
+        microcosm: 'microcosm',
+        'microcosm-http': 'microcosm-http'
+      },
+      node: {
+        process: false,
+        buffer: false
+      },
+      output: output,
+      module: modules,
+      resolve: resolve,
+      plugins: [new webpack.optimize.ModuleConcatenationPlugin()]
+    },
+    {
+      context: __dirname,
+      entry: {
         client: './src/client'
       },
       devtool: 'sourcemap',
       output: output,
       module: modules,
       resolve: resolve,
-      plugins: [new HTMLPlugin()]
+      plugins: [new HTMLPlugin({ template: './index.html' })]
     },
     {
       context: __dirname,
