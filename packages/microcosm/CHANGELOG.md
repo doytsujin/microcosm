@@ -1,6 +1,6 @@
 # Changelog 
 
-## 12.14.0 (beta)
+## 12.14.0
 
 - ActionForm action callbacks are given the related form as the second argument.
 - ActionForm and ActionButton action callbacks are automatically unsubscribe on unmount
