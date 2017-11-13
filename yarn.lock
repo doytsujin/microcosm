@@ -8448,3 +8448,13 @@ yeast@0.1.2:
 zen-observable@^0.5.2:
   version "0.5.2"
   resolved "https://registry.yarnpkg.com/zen-observable/-/zen-observable-0.5.2.tgz#845a1cfda804a13419ec8ec12343e1f4c45cd07a"
+
+zen-observable@^0.6.0:
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/zen-observable/-/zen-observable-0.6.0.tgz#8a6157ed15348d185d948cfc4a59d90a2c0f70ee"
+
+zen-push@^0.1.4:
+  version "0.1.4"
+  resolved "https://registry.yarnpkg.com/zen-push/-/zen-push-0.1.4.tgz#a3f22d786255901ccd293d1930b014540ac3e08c"
+  dependencies:
+    zen-observable "^0.6.0"

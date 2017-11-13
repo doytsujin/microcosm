@@ -69,7 +69,7 @@ class History extends Emitter {
     //  move forward. Update that path back to the sharedRoot:
     let cursor = this.head
     while (cursor && cursor !== sharedRoot) {
-      let parent = cursor.parent
+      let parent = cursor.parentAction
 
       if (parent) {
         parent.lead(cursor)
@@ -130,7 +130,7 @@ class History extends Emitter {
           return { done: true }
         }
 
-        cursor = next == this.head ? null : cursor.next
+        cursor = next == this.head ? null : cursor.nextAction
 
         // Ignore certain lifecycle actions that are only for
         // internal purposes
@@ -164,7 +164,7 @@ class History extends Emitter {
    * the current branch.
    */
   wait(): Promise<*> {
-    let group = new Action('GROUP')
+    let group = new Action('GROUP', [])
 
     group.link(this.toArray())
 
@@ -189,7 +189,7 @@ class History extends Emitter {
    * starts or restarts history.
    */
   begin() {
-    this.root = this.head = this.append(START, 'resolve')
+    this.root = this.head = this.append(START, [], 'resolve')
   }
 
   /**
@@ -197,16 +197,17 @@ class History extends Emitter {
    */
   append(
     command: string | Command,
+    params: *[],
     status?: ?Status,
     origin: Microcosm
   ): Action {
-    let action = new Action(command, status, origin)
+    let action = new Action(command, params, status, origin)
 
     if (this.head) {
       this.head.lead(action)
     } else {
       // Always have a parent node, no matter what
-      let birth = new Action(BIRTH, 'resolve')
+      let birth = new Action(BIRTH, [], 'resolve', origin)
 
       birth.adopt(action)
 
@@ -216,7 +217,10 @@ class History extends Emitter {
     this.head = action
     this.size += 1
 
-    action.on('change', this.reconcile, this)
+    action.subscribe({
+      next: () => this.reconcile(action),
+      complete: () => this.archive()
+    })
 
     if (status && action.command !== START) {
       this.reconcile(action)
@@ -235,8 +239,8 @@ class History extends Emitter {
     }
 
     // cache linking references and activeness
-    let parent = action.parent
-    let next = action.next
+    let parent = action.parentAction
+    let next = action.nextAction
     let wasActive = this.isActive(action)
 
     this.clean(action)
@@ -292,8 +296,6 @@ class History extends Emitter {
       this._emit('change', action, this.head)
     }
 
-    this.archive()
-
     this.queueRelease()
   }
 
@@ -333,13 +335,13 @@ class History extends Emitter {
     let size = this.size
     let root = this.root
 
-    while (size > this.limit && root.complete) {
+    while (size > this.limit && root.completed) {
       size -= 1
 
-      this._emit('remove', root.parent)
+      this._emit('remove', root.parentAction)
 
-      if (root.next) {
-        root = root.next
+      if (root.nextAction) {
+        root = root.nextAction
       }
     }
 
@@ -360,7 +362,7 @@ class History extends Emitter {
     let size = 1
 
     while (action && action !== this.root) {
-      action = action.parent
+      action = action.parentAction
       size += 1
     }
 
@@ -384,7 +386,7 @@ class History extends Emitter {
       if (cursor === this.head) {
         return true
       }
-      cursor = cursor.next
+      cursor = cursor.nextAction
     }
 
     return false
@@ -402,7 +404,7 @@ class History extends Emitter {
       if (this.isActive(cursor)) {
         return cursor
       }
-      cursor = cursor.parent
+      cursor = cursor.parentAction
     }
 
     return this.head

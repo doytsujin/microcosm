@@ -25,7 +25,9 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "form-serialize": "^0.7.2"
+    "form-serialize": "^0.7.2",
+    "zen-observable": "^0.6.0",
+    "zen-push": "^0.1.4"
   },
   "devDependencies": {
     "console.table": "^0.9.1",

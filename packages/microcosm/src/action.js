@@ -7,12 +7,10 @@
 import $observable from 'symbol-observable'
 import Observable from 'zen-observable'
 import coroutine from './coroutine'
-import Emitter, { type Callback } from './emitter'
 import tag from './tag'
 import { uid } from './utils'
 
 type ActionUpdater = (payload?: mixed) => *
-type Revision = { status: string, payload: *, timestamp: number }
 
 const ResolutionMap = {
   inactive: false,
@@ -27,39 +25,59 @@ const ResolutionMap = {
   cancelled: true
 }
 
-class Action extends Emitter {
+Observable.prototype.then = function(pass, fail) {
+  return new Promise((resolve, reject) => {
+    let last = null
+
+    this.subscribe({
+      next(value) {
+        last = value
+      },
+      complete() {
+        resolve(last)
+      },
+      error: reject
+    })
+  }).then(pass, fail)
+}
+
+class Action {
   id: string
   command: Function
   status: Status
   payload: any
   disabled: boolean
   parent: ?Action
-  next: ?Action
-  complete: boolean
   timestamp: number
   children: Action[]
-  revisions: Revision[]
   origin: Microcosm
 
-  constructor(command: string | Command, status: ?Status, origin: Microcosm) {
-    super()
-
+  constructor(
+    command: string | Command,
+    params: *[],
+    status: ?Status,
+    origin: Microcosm
+  ) {
     this.id = uid('action')
     this.command = tag(command)
     this.status = 'inactive'
     this.payload = undefined
     this.disabled = false
-    this.complete = false
-    this.parent = null
-    this.next = null
+    this.parentAction = null
+    this.nextAction = null
     this.timestamp = Date.now()
     this.children = []
-    this.revisions = []
     this.origin = origin
 
-    if (status) {
-      this._setState(status)
-    }
+    this.observable = new Observable(observer => {
+      this.observer = observer
+
+      if (status) {
+        this._setState(status)
+      }
+
+      coroutine(this, params, origin)
+    })
   }
 
   get type(): string {
@@ -86,103 +104,23 @@ class Action extends Emitter {
     return this._setState.bind(this, 'cancel')
   }
 
-  execute(params: *[]): this {
-    console.assert(
-      Array.isArray(params),
-      'Action.execute must receive array of arguments.'
-    )
-
-    coroutine(this, params, this.origin)
-
-    return this
+  then(pass, fail): Promise<*> {
+    return new Promise((resolve, reject) => {
+      this.observable.subscribe({
+        complete: () => {
+          resolve(this.payload)
+        },
+        error: reject
+      })
+    }).then(pass, fail)
   }
 
-  onOpen(callback: Callback, scope?: Object): this {
-    this._callOrSubscribeOnce('open', callback, scope)
-    return this
-  }
-
-  onUpdate(callback: Callback, scope?: Object): this {
-    if (callback) {
-      this.on('update', callback, scope)
-    }
-
-    return this
-  }
-
-  onDone(callback: Callback, scope?: Object): this {
-    this._callOrSubscribeOnce('resolve', callback, scope)
-    return this
-  }
-
-  onError(callback: Callback, scope?: Object): this {
-    this._callOrSubscribeOnce('reject', callback, scope)
-    return this
-  }
-
-  onCancel(callback: Callback, scope?: Object): this {
-    this._callOrSubscribeOnce('cancel', callback, scope)
-    return this
-  }
-
-  onNext(callback: Callback, scope?: Object): this {
-    let iterator = () => {
-      let size = this.revisions.length
-
-      if (size > 0) {
-        callback.call(scope, this.revisions[size - 1])
-      }
-
-      if (this.complete) {
-        this.off('change', iterator)
-      }
-    }
-
-    iterator()
-
-    this.on('change', iterator)
-
-    return this
+  subscribe() {
+    return this.observable.subscribe(...arguments)
   }
 
   is(type: Status): boolean {
     return this.command[this.status] === this.command[type]
-  }
-
-  toggle(silent?: boolean) {
-    this.disabled = !this.disabled
-
-    if (!silent) {
-      this._emit('change', this)
-    }
-
-    return this
-  }
-
-  subscribe(callbacks: Object, scope: *) {
-    if (callbacks.onNext) {
-      this.onNext(callbacks.onNext, scope)
-    }
-
-    if (callbacks.onOpen) {
-      this.onOpen(callbacks.onOpen, scope)
-    }
-
-    if (callbacks.onUpdate) {
-      this.onUpdate(callbacks.onUpdate, scope)
-    }
-
-    if (callbacks.onCancel) {
-      this.onCancel(callbacks.onCancel, scope)
-    }
-
-    if (callbacks.onDone) {
-      this.onDone(callbacks.onDone, scope)
-    }
-
-    if (callbacks.onError) {
-      this.onError(callbacks.onError, scope)
-    }
   }
 
   /**
@@ -201,9 +139,10 @@ class Action extends Emitter {
     }
 
     actions.forEach(action => {
-      action.onDone(onResolve)
-      action.onCancel(onResolve)
-      action.onError(this.reject)
+      action.subscribe({
+        complete: onResolve,
+        error: this.reject
+      })
     })
 
     onResolve()
@@ -211,23 +150,16 @@ class Action extends Emitter {
     return this
   }
 
-  then(pass?: *, fail?: *): Promise<*> {
-    return new Promise((resolve, reject) => {
-      this.onDone(resolve)
-      this.onError(reject)
-    }).then(pass, fail)
-  }
-
   isDisconnected(): boolean {
-    return !this.parent
+    return !this.parentAction
   }
 
   /**
    * Remove the grandparent of this action, cutting off history.
    */
   prune() {
-    if (this.parent) {
-      this.parent.parent = null
+    if (this.parentAction) {
+      this.parentAction.parentAction = null
     } else {
       console.assert(
         false,
@@ -241,7 +173,7 @@ class Action extends Emitter {
    * actions.
    */
   lead(child: ?Action) {
-    this.next = child
+    this.nextAction = child
 
     if (child) {
       this.adopt(child)
@@ -258,7 +190,7 @@ class Action extends Emitter {
       this.children.push(child)
     }
 
-    child.parent = this
+    child.parentAction = this
   }
 
   /**
@@ -266,8 +198,8 @@ class Action extends Emitter {
    * from history.
    */
   remove() {
-    if (this.parent) {
-      this.parent.abandon(this)
+    if (this.parentAction) {
+      this.parentAction.abandon(this)
     } else {
       console.assert(false, 'Action has already been removed.')
     }
@@ -283,56 +215,35 @@ class Action extends Emitter {
 
     if (index >= 0) {
       this.children.splice(index, 1)
-      child.parent = null
+      child.parentAction = null
     }
 
     // If the action is the oldest child of a parent, pass
     // on the lead role to the next child.
-    if (this.next === child) {
-      this.lead(child.next)
-    }
-  }
-
-  /**
-   * If an action is already a given status, invoke the
-   * provided callback. Otherwise setup a one-time listener
-   */
-  _callOrSubscribeOnce(status: Status, callback: Callback, scope: ?Object) {
-    if (callback) {
-      console.assert(
-        typeof callback === 'function',
-        `Expected a function when subscribing to ${status} instead got ${typeof callback}`
-      )
-
-      if (this.is(status)) {
-        callback.call(scope, this.payload)
-      } else {
-        this.once(status, callback, scope)
-      }
+    if (this.nextAction === child) {
+      this.lead(child.nextAction)
     }
   }
 
   _setState(status: Status, payload: mixed) {
-    if (this.complete === true) {
-      return this
-    }
-
     this.status = status
-    this.complete = ResolutionMap[status]
 
     // Check arguments, we want to allow payloads that are undefined
     if (arguments.length > 1) {
       this.payload = payload
     }
 
-    this.revisions.push({
+    let revision = {
       status: this.status,
       payload: this.payload,
       timestamp: Date.now()
-    })
+    }
 
-    this._emit('change', this)
-    this._emit(status, this.payload)
+    this.observer.next(revision)
+
+    if (ResolutionMap[status]) {
+      this.observer.complete(revision)
+    }
 
     return this
   }
@@ -349,25 +260,20 @@ class Action extends Emitter {
       payload: this.payload,
       disabled: this.disabled,
       children: this.children,
-      revisions: this.revisions,
-      next: this.next && this.next.id
+      next: this.nextAction && this.nextAction.id
     }
   }
 
   [$observable]() {
-    return new Observable(observer => {
-      let updater = payload => {
-        observer.next(payload)
+    return this.observable
+  }
 
-        if (this.complete) {
-          observer.complete()
-        }
-      }
+  map() {
+    return this.observable.map(...arguments)
+  }
 
-      this.onNext(updater, observer)
-
-      return () => this._removeScope(observer)
-    })
+  reduce() {
+    return this.observable.reduce(...arguments)
   }
 }
 

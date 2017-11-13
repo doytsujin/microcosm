@@ -201,14 +201,10 @@ class Microcosm extends Emitter {
    * assert.falsy(repo.state.planets.pluto.loading)
    * ```
    */
-  append(command: *, status?: Status): Action {
-    if (typeof command === 'string') {
-      if (command in this.actions) {
-        return this.history.append(this.actions[command], status)
-      }
-    }
+  append(command: *, params: *[], status?: Status): Action {
+    let type = this.actions[command] || command
 
-    return this.history.append(command, status, this)
+    return this.history.append(type, params, status, this)
   }
 
   /**
@@ -217,16 +213,16 @@ class Microcosm extends Emitter {
    * repo.push(createPlanet, { name: 'Merkur' })
    * ```
    */
-  push(command: any, ...params: *): Action {
-    let action = this.append(command)
-
+  push(command: any, ...params: *[]): Action {
     console.assert(
       this.active,
-      `Pushed "${action.toString()}" action, however this Microcosm has been shutdown. ` +
+      `Pushed "${tag(
+        command
+      ).toString()}" action, however this Microcosm has been shutdown. ` +
         "It's possible that an event subscription was not cleaned up."
     )
 
-    return action.execute(params)
+    return this.append(command, params)
   }
 
   /**
@@ -454,7 +450,7 @@ class Microcosm extends Emitter {
         break
       }
 
-      focus = focus.next
+      focus = focus.nextAction
     }
   }
 
@@ -495,7 +491,9 @@ class Microcosm extends Emitter {
       `Unable to fetch. ${path} not found.`
     )
 
-    //    tag(method, FETCH)
+    tag(method, path)
+
+    this.domains.storeFetcher(path)
 
     return this.push(method, ...args)
   }

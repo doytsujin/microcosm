@@ -3,7 +3,7 @@
  */
 
 import getRegistration from './get-registration'
-import { clone, merge, result, createOrClone } from './utils'
+import { get, set, clone, merge, result, createOrClone } from './utils'
 import { RESET, PATCH, FETCH } from './lifecycle'
 
 import type Action from './action'
@@ -96,7 +96,7 @@ class DomainEngine {
         (state: *, data: any) => {
           return data[key] !== undefined
             ? data[key]
-            : result(domain, 'getInitialState')
+            : result(domain, 'getInitialState', {})
         }
       ]
     })
@@ -198,6 +198,31 @@ class DomainEngine {
     }
 
     return next
+  }
+
+  storeFetcher(path) {
+    if (this.lifecycle[path]) {
+      return
+    }
+
+    let [key] = path.split('.')
+
+    let identify = get(this.domains, [key, 'identify'], n => get(n, 'id', null))
+
+    this.lifecycle[path] = [
+      {
+        key: key,
+        scope: this.domains[key],
+        local: false,
+        steps: [
+          (state: *, data: any) => {
+            return [].concat(data).reduce((memo, next) => {
+              return set(memo, identify(next), next)
+            }, state)
+          }
+        ]
+      }
+    ]
   }
 }
 
