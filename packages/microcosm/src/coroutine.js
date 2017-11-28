@@ -53,8 +53,9 @@ function processGenerator(action: Action, body: GeneratorAction, repo: *) {
  * Coroutine is used by an action to determine how it should resolve
  * the body of their associated command.
  */
-export default function coroutine(action: Action, params: *[], repo: any) {
-  let body = action.command.apply(null, params)
+export default function coroutine(job, params: *[], repo: any) {
+  let action = new Action()
+  let body = job.apply(null, params)
 
   /**
    * Provide support for Promises:
@@ -66,11 +67,11 @@ export default function coroutine(action: Action, params: *[], repo: any) {
    * 4. Otherwise resolve the action with the returned body
    */
   if (isPromise(body)) {
-    action.open(...params)
+    action.open(params[0])
 
     body.then(
-      result => setTimeout(() => action.resolve(result), 0),
-      error => setTimeout(() => action.reject(error), 0)
+      payload => action.resolve(payload),
+      payload => action.reject(payload)
     )
 
     return action
@@ -81,7 +82,8 @@ export default function coroutine(action: Action, params: *[], repo: any) {
    * in order
    */
   if (isGeneratorFn(body)) {
-    return processGenerator(action, body, repo)
+    processGenerator(action, body, repo)
+    return action
   }
 
   /**
@@ -94,10 +96,11 @@ export default function coroutine(action: Action, params: *[], repo: any) {
    */
   if (isFunction(body) && !params.some(param => param === body)) {
     body(action, repo)
-
     return action
   }
 
   // Otherwise just return a resolved action
-  return action.resolve(body)
+  action.resolve(body)
+
+  return action
 }
