@@ -2,7 +2,7 @@
  * @flow
  */
 
-import { Observable } from 'microcosm'
+import { Observable } from './observable'
 import { castPath, type KeyPath } from './key-path'
 
 import type Microcosm from './microcosm'
@@ -211,7 +211,10 @@ const updatePair = (pair, value) => {
   return pair
 }
 
-const assignPair = (state, pair) => set(state, pair)
+const assignPair = (state, pair) => {
+  state[pair[0]] = pair[1]
+  return pair
+}
 
 export function observerHash(obj) {
   if (isObject(obj)) {
