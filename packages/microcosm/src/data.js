@@ -1,6 +1,7 @@
 // @flow
 
 import { castPath, type KeyPath } from './key-path'
+import { getSymbol } from './symbols'
 
 type MixedObject = { [key: string]: mixed }
 
@@ -147,4 +148,79 @@ export function clone<T: MixedObject>(target: T): $Shape<T> {
   }
 
   return copy
+}
+
+export class Tree {
+  constructor() {
+    this._backwards = new Map()
+    this._forwards = new Map()
+  }
+
+  point(before, node) {
+    this._backwards.set(node, before)
+    this._forwards.set(before, node)
+  }
+
+  before(node) {
+    return this._backwards.get(node)
+  }
+
+  after(node) {
+    return this._forwards.get(node)
+  }
+
+  remove(node) {
+    let before = this._backwards.get(node)
+    let after = this._forwards.get(node)
+
+    this._forwards.delete(node)
+    this._backwards.delete(node)
+
+    if (this._forwards.get(before) === node) {
+      this._forwards.set(before, after)
+    }
+
+    if (this._backwards.get(after) === node) {
+      this._backwards.set(after, before)
+    }
+
+    return after || before
+  }
+
+  select(node) {
+    let path = []
+
+    while (node) {
+      var before = this.before(node)
+
+      path.push(node)
+
+      if (before) {
+        this.point(before, node)
+        node = before
+      } else {
+        break
+      }
+    }
+
+    return path.reverse()
+  }
+
+  children(node) {
+    let all = Array.from(this._backwards.keys())
+
+    return all.filter(child => this._backwards.get(child) === node)
+  }
+
+  toJS(node) {
+    if (node) {
+      let base = node.toJSON()
+
+      base.children = this.children(node).map(this.toJS, this)
+
+      return base
+    }
+
+    return null
+  }
 }
