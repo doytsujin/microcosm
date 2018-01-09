@@ -1,7 +1,6 @@
 // @flow
 
 import { castPath, type KeyPath } from './key-path'
-import { getSymbol } from './symbols'
 
 type MixedObject = { [key: string]: mixed }
 
@@ -143,7 +142,7 @@ export function clone<T: MixedObject>(target: T): $Shape<T> {
 
   let copy = {}
 
-  for (var key in target) {
+  for (let key in target) {
     copy[key] = target[key]
   }
 
@@ -206,21 +205,23 @@ export class Tree {
     return path.reverse()
   }
 
-  children(node) {
-    let all = Array.from(this._backwards.keys())
-
-    return all.filter(child => this._backwards.get(child) === node)
-  }
-
   toJS(node) {
     if (node) {
       let base = node.toJSON()
 
-      base.children = this.children(node).map(this.toJS, this)
+      base.children = this._children(node).map(this.toJS, this)
 
       return base
     }
 
     return null
+  }
+
+  // Private -------------------------------------------------- //
+
+  _children(node) {
+    let all = Array.from(this._backwards.keys())
+
+    return all.filter(child => this._backwards.get(child) === node)
   }
 }

@@ -30,6 +30,10 @@ module.exports = {
   extends: ['eslint:recommended', 'plugin:flowtype/recommended'],
   plugins: ['react', 'flowtype', 'flowtype-errors'],
   rules: {
+    'no-use-before-define': [
+      'error',
+      { functions: false, classes: false, variables: true }
+    ],
     'sort-vars': 0,
     'no-console': 0,
     'no-unused-vars': [
