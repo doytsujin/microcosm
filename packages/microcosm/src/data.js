@@ -1,8 +1,23 @@
 // @flow
+import { EMPTY_ARRAY } from './empty'
 
-import { castPath, type KeyPath } from './key-path'
-
+type KeyPath = Array<string>
 type MixedObject = { [key: string]: mixed }
+
+function castPath(value: string | KeyPath): KeyPath {
+  if (Array.isArray(value)) {
+    return value
+  }
+
+  if (value == undefined || value === '') {
+    return EMPTY_ARRAY
+  }
+
+  return value
+    .toString()
+    .trim()
+    .split('.')
+}
 
 function isObject(value: *) {
   return value !== null && typeof value === 'object'

@@ -4,13 +4,13 @@
     "node": ">= 6.10"
   },
   "scripts": {
-    "format": "./bin/format",
+    "format": "prettier --write './packages/**/*.js'",
     "build": "lerna run build --concurrency 1",
     "watch": "lerna run --parallel watch",
-    "test": "NODE_ENV=test jest",
+    "test": "jest",
     "test:cov": "jest --coverage --maxWorkers=2",
     "test:prod": "yarn build && BUNDLED=true jest --maxWorkers=2",
-    "lint": "./bin/lint",
+    "lint": "yarn eslint packages --cache",
     "clean": "git clean -Xdf",
     "report-coverage": "codecov coverage/lcov.info"
   },
@@ -29,12 +29,13 @@
     "eslint-plugin-flowtype": "^2.40.1",
     "eslint-plugin-flowtype-errors": "^3.3.1",
     "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-prettier": "^2.4.0",
     "eslint-plugin-react": "^7.3.0",
     "flow-bin": "^0.61.0",
     "jest": "^22.0.1",
     "lerna": "^2.1.2",
     "microbundle": "^0.2.4",
-    "prettier": "^1.9.2",
+    "prettier": "^1.10.2",
     "raf": "^3.3.2"
   },
   "prettier": {
