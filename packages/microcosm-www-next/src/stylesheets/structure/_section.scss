@@ -4,7 +4,7 @@ $section-top-padding-desktop: $nav-height + 110px;
 .section {
   padding-top: $section-top-padding-mobile;
 
-  @include breakpoint(large-desktop-up) {
+  @include breakpoint(medium-desktop-up) {
     display: flex;
     padding-top: $section-top-padding-desktop;
 
@@ -22,7 +22,7 @@ $section-top-padding-desktop: $nav-height + 110px;
   position: fixed;
   width: 100%;
 
-  @include breakpoint(large-desktop-up) {
+  @include breakpoint(medium-desktop-up) {
     right: 2%;
     width: 45%;
   }
@@ -33,7 +33,7 @@ $section-top-padding-desktop: $nav-height + 110px;
     position: sticky;
     top: $section-top-padding-mobile;
 
-    @include breakpoint(large-desktop-up) {
+    @include breakpoint(medium-desktop-up) {
       order: 2;
       top: $section-top-padding-desktop;
     }
@@ -47,7 +47,7 @@ $section-top-padding-desktop: $nav-height + 110px;
   margin-bottom: rem(50);
   max-width: 550px;
 
-  @include breakpoint(medium-desktop-down) {
+  @include breakpoint(small-desktop-down) {
     margin: 0 auto rem(50);
     padding-left: rem(40);
   }
@@ -68,7 +68,7 @@ $section-top-padding-desktop: $nav-height + 110px;
     }
   }
 
-  @include breakpoint(large-desktop-up) {
+  @include breakpoint(medium-desktop-up) {
     margin-bottom: rem(63);
   }
 
@@ -79,7 +79,7 @@ $section-top-padding-desktop: $nav-height + 110px;
     margin-bottom: rem(5);
     text-transform: uppercase;
 
-    @include breakpoint(medium-desktop-down) {
+    @include breakpoint(small-desktop-down) {
       &:not(.-end) {
         left: rem(-40);
         position: absolute;
@@ -142,12 +142,12 @@ $section-top-padding-desktop: $nav-height + 110px;
 // GRAPHIC
 
 .section__graphic {
-  @include breakpoint(medium-desktop-down) {
+  @include breakpoint(small-desktop-down) {
     padding-top: 30vh;
   }
 
-  @include breakpoint(large-desktop-up) {
-    flex-basis: 600px;
+  @include breakpoint(medium-desktop-up) {
+    flex-basis: 50%;
   }
 
   @supports (position: sticky) or (position: -webkit-sticky) {
@@ -169,7 +169,7 @@ $section-top-padding-desktop: $nav-height + 110px;
     opacity: 1;
   }
 
-  @include breakpoint(large-desktop-up) {
+  @include breakpoint(medium-desktop-up) {
     margin-bottom: 30vh;
 
     &::after {
@@ -184,7 +184,7 @@ $section-top-padding-desktop: $nav-height + 110px;
   }
 
   &:last-child {
-    @include breakpoint(large-desktop-up) {
+    @include breakpoint(medium-desktop-up) {
       margin-bottom: 60vh;
 
       &::after {
